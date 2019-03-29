@@ -56,10 +56,7 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
             ctClass.defrost()
         }
 
-        if (path.contains('io/github/lizhangqu/app/MainActivity')) {
-            detect(path, ctClass)
-        }
-
+        detect(path, ctClass)
 
         TransformHelper.copy(new ByteArrayInputStream(ctClass.toBytecode()), outputStream)
     }
