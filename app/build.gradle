@@ -2,8 +2,9 @@ apply plugin: 'com.android.application'
 apply plugin: 'apache.httpclient.detect'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
+    useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
         applicationId "io.github.lizhangqu.app"
