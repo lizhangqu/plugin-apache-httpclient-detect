@@ -86,7 +86,7 @@ buildscript {
 }
 
 group = "io.github.lizhangqu"
-archivesBaseName = "plugin-flutter-patch"
+archivesBaseName = "plugin-apache-httpclient-detect"
 apply plugin: 'android.publish'
 
 pom {
