@@ -126,7 +126,10 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
     void detect(String path, CtClass ctClass) {
         try {
             ctClass?.getRefClasses()?.each { String name ->
-                if (isApacheLegacy(name) && apacheLegacyClassPool?.getOrNull(name) != null) {
+                if (!isApacheLegacy(name)) {
+                    return
+                }
+                if (apacheLegacyClassPool?.getOrNull(name) != null) {
                     project.logger.error("----------------------------------------Class Reference Start----------------------------------------")
                     project.logger.error("Apache HttpClient Class Reference: ")
                     project.logger.error("        └> [Class: ${name}]")
@@ -136,7 +139,16 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
             }
 
             ctClass?.getDeclaredFields()?.each { CtField ctField ->
-                if (isApacheLegacy(ctField.getType().getName()) && apacheLegacyClassPool?.getOrNull(ctField.getType().getName()) != null) {
+                if (!isApacheLegacy(ctField.getType().getName())) {
+                    return
+                }
+                if (ctField.getType().isPrimitive()) {
+                    return
+                }
+                if (ctField.getType().isArray() && ctField.getType().getComponentType().isPrimitive()) {
+                    return
+                }
+                if (apacheLegacyClassPool?.getOrNull(ctField.getType().getName()) != null) {
                     project.logger.error("----------------------------------------Field Reference Start----------------------------------------")
                     project.logger.error("Apache HttpClient Field Reference: ")
                     project.logger.error("        └> [Class: ${ctField.getType().getName()}]")
@@ -151,14 +163,25 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
                     @Override
                     void edit(MethodCall methodCall) throws CannotCompileException {
                         super.edit(methodCall)
-                        if (isApacheLegacy(methodCall.className) && apacheLegacyClassPool?.getOrNull(methodCall.className) != null) {
-                            project.logger.error("----------------------------------------Method Reference Start----------------------------------------")
-                            project.logger.error("Apache HttpClient Method Reference: ")
-                            project.logger.error("        └> [Class: ${methodCall.getClassName()}]")
-                            project.logger.error("        └> [Method: ${methodCall.getMethodName()}${methodCall.getSignature()}]")
-                            project.logger.error("        └> [Referenced By Class: ${path.replaceAll('/', '.')}, Line: ${methodCall.getLineNumber()}]")
-                            project.logger.error("----------------------------------------Method Reference End------------------------------------------\n\n")
+                        if (!isApacheLegacy(methodCall.className)) {
+                            return
                         }
+                        CtClass clazz = apacheLegacyClassPool?.getOrNull(methodCall.className)
+                        if (clazz == null) {
+                            return
+                        }
+                        if (clazz.isPrimitive()) {
+                            return
+                        }
+                        if (clazz.isArray() && clazz.getComponentType().isPrimitive()) {
+                            return
+                        }
+                        project.logger.error("----------------------------------------Method Reference Start----------------------------------------")
+                        project.logger.error("Apache HttpClient Method Reference: ")
+                        project.logger.error("        └> [Class: ${methodCall.getClassName()}]")
+                        project.logger.error("        └> [Method: ${methodCall.getMethodName()}${methodCall.getSignature()}]")
+                        project.logger.error("        └> [Referenced By Class: ${path.replaceAll('/', '.')}, Line: ${methodCall.getLineNumber()}]")
+                        project.logger.error("----------------------------------------Method Reference End------------------------------------------\n\n")
                     }
                 })
             }
