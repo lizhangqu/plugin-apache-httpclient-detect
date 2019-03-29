@@ -6,7 +6,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "io.github.lizhangqu:plugin-apache-httpclient-detect:1.0.0"
+        classpath "io.github.lizhangqu:plugin-apache-httpclient-detect:1.0.1"
     }
 }
 
