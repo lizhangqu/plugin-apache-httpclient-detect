@@ -30,14 +30,7 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
 
     @Override
     void accept(String variantName, String path, InputStream inputStream, OutputStream outputStream) {
-        if (apacheLegacyClassPool == null) {
-            File apacheJarFile = getApacheLegacyJarFile()
-            project.logger.info("insertClassPath org.apache.http.legacy.jar ${apacheJarFile}")
-            if (apacheJarFile != null) {
-                apacheLegacyClassPool = new ClassPool()
-                apacheLegacyClassPool.insertClassPath(apacheJarFile.getAbsolutePath())
-            }
-        }
+
 
         ClassPool classPool = classPoolMap.get(variantName)
         if (classPool == null) {
@@ -46,6 +39,14 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
             classPoolMap.put(variantName, classPool)
         }
 
+        if (apacheLegacyClassPool == null) {
+            File apacheJarFile = getApacheLegacyJarFile()
+            project.logger.info("insertClassPath org.apache.http.legacy.jar ${apacheJarFile}")
+            if (apacheJarFile != null) {
+                apacheLegacyClassPool = new ClassPool()
+                apacheLegacyClassPool.insertClassPath(apacheJarFile.getAbsolutePath())
+            }
+        }
 
         if (apacheLegacyClassPool == null) {
             return
@@ -96,11 +97,36 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
         return null
     }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
+    boolean isApacheLegacy(String name) {
+        if (name == null) {
+            return false
+        }
+        if (name.startsWith('org.apache.http.')) {
+            return true
+        }
+        if (name.startsWith('org.apache.commons.codec')) {
+            return true
+        }
+        if (name.startsWith('org.apache.commons.logging')) {
+            return true
+        }
+        if (name.startsWith('com.android.internal.http.multipart')) {
+            return true
+        }
+        if (name.startsWith('android.net.compatibility')) {
+            return true
+        }
+        if (name.startsWith('android.net.http')) {
+            return true
+        }
+        return false
+    }
 
     void detect(String path, CtClass ctClass) {
         try {
             ctClass?.getRefClasses()?.each { String name ->
-                if (apacheLegacyClassPool?.getOrNull(name) != null) {
+                if (isApacheLegacy(name) && apacheLegacyClassPool?.getOrNull(name) != null) {
                     project.logger.error("----------------------------------------Class Reference Start----------------------------------------")
                     project.logger.error("Apache HttpClient Class Reference: ")
                     project.logger.error("        └> [Class: ${name}]")
@@ -110,7 +136,7 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
             }
 
             ctClass?.getDeclaredFields()?.each { CtField ctField ->
-                if (apacheLegacyClassPool?.getOrNull(ctField.getType().getName()) != null) {
+                if (isApacheLegacy(ctField.getType().getName()) && apacheLegacyClassPool?.getOrNull(ctField.getType().getName()) != null) {
                     project.logger.error("----------------------------------------Field Reference Start----------------------------------------")
                     project.logger.error("Apache HttpClient Field Reference: ")
                     project.logger.error("        └> [Class: ${ctField.getType().getName()}]")
@@ -125,7 +151,7 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
                     @Override
                     void edit(MethodCall methodCall) throws CannotCompileException {
                         super.edit(methodCall)
-                        if (apacheLegacyClassPool?.getOrNull(methodCall.className) != null) {
+                        if (isApacheLegacy(methodCall.className) && apacheLegacyClassPool?.getOrNull(methodCall.className) != null) {
                             project.logger.error("----------------------------------------Method Reference Start----------------------------------------")
                             project.logger.error("Apache HttpClient Method Reference: ")
                             project.logger.error("        └> [Class: ${methodCall.getClassName()}]")
