@@ -118,6 +118,18 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
             return true
         }
         if (name.startsWith('android.net.http')) {
+            if (name.startsWith('android.net.http.HttpResponseCache')) {
+                return false
+            }
+            if (name.startsWith('android.net.http.SslCertificate')) {
+                return false
+            }
+            if (name.startsWith('android.net.http.SslError')) {
+                return false
+            }
+            if (name.startsWith('android.net.http.X509TrustManagerExtensions')) {
+                return false
+            }
             return true
         }
         return false
