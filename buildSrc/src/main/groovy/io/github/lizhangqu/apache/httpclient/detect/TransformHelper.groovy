@@ -87,7 +87,7 @@ public class TransformHelper {
         }
         try {
             def javacTask = project.tasks.findByName("compile${variantName.capitalize()}JavaWithJavac")
-            if(javacTask){
+            if (javacTask) {
                 classPool.insertClassPath(javacTask.getDestinationDir().getAbsolutePath())
             }
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public class TransformHelper {
 
         try {
             def kotlinTask = project.tasks.findByName("compile${variantName.capitalize()}Kotlin")
-            if(kotlinTask){
+            if (kotlinTask) {
                 classPool.insertClassPath(kotlinTask.getDestinationDir().getAbsolutePath())
             }
         } catch (Exception e) {
@@ -107,6 +107,36 @@ public class TransformHelper {
                 classPool.insertClassPath(it.absolutePath)
             } catch (Exception e) {
             }
+        }
+
+        BaseVariant foundVariant = null
+
+        def variants = null;
+        if (project.plugins.hasPlugin('com.android.application')) {
+            variants = project.android.getApplicationVariants()
+        } else if (project.plugins.hasPlugin('com.android.library')) {
+            variants = project.android.getLibraryVariants()
+        }
+
+        variants?.all { BaseVariant variant ->
+            if (variant.getName() == variantName) {
+                foundVariant = variant
+            }
+        }
+
+        if (foundVariant != null) {
+            try {
+                def variantData = foundVariant.getMetaClass().getProperty(foundVariant, 'variantData')
+                variantData.getScope().getTryWithResourceRuntimeSupportJar()?.each {
+                    try {
+                        classPool.insertClassPath(it.absolutePath)
+                    } catch (Exception e) {
+                    }
+                }
+            } catch (Exception e1) {
+
+            }
+
         }
     }
 
