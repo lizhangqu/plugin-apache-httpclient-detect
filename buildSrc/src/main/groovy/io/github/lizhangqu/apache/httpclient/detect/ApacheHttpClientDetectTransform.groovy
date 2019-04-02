@@ -4,6 +4,7 @@ import javassist.CannotCompileException
 import javassist.ClassPool
 import javassist.CtClass
 import javassist.CtField
+import javassist.NotFoundException
 import javassist.expr.ExprEditor
 import javassist.expr.MethodCall
 import org.apache.commons.io.FilenameUtils
@@ -151,19 +152,28 @@ class ApacheHttpClientDetectTransform implements Consumer<InputStream, OutputStr
             }
 
             ctClass?.getDeclaredFields()?.each { CtField ctField ->
-                if (!isApacheLegacy(ctField.getType().getName())) {
+                CtClass fieldClass = null
+                try {
+                    fieldClass = ctField.getType()
+                } catch (NotFoundException e) {
+
+                }
+                if (fieldClass == null) {
                     return
                 }
-                if (ctField.getType().isPrimitive()) {
+                if (!isApacheLegacy(fieldClass.getName())) {
                     return
                 }
-                if (ctField.getType().isArray() && ctField.getType().getComponentType().isPrimitive()) {
+                if (fieldClass.isPrimitive()) {
                     return
                 }
-                if (apacheLegacyClassPool?.getOrNull(ctField.getType().getName()) != null) {
+                if (fieldClass.isArray() && fieldClass.getComponentType().isPrimitive()) {
+                    return
+                }
+                if (apacheLegacyClassPool?.getOrNull(fieldClass.getName()) != null) {
                     project.logger.error("----------------------------------------Field Reference Start----------------------------------------")
                     project.logger.error("Apache HttpClient Field Reference: ")
-                    project.logger.error("        └> [Class: ${ctField.getType().getName()}]")
+                    project.logger.error("        └> [Class: ${fieldClass.getName()}]")
                     project.logger.error("        └> [Filed: ${ctField.getName()}]")
                     project.logger.error("        └> [Referenced By Class: ${path.replaceAll('/', '.')}]")
                     project.logger.error("----------------------------------------Field Reference End------------------------------------------\n\n")
