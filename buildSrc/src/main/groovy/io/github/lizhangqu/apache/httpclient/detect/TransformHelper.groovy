@@ -1,6 +1,6 @@
 package io.github.lizhangqu.apache.httpclient.detect
 
-import com.android.build.gradle.AppExtension
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.BaseVariant
 import javassist.ClassPool
 import org.gradle.api.GradleException
@@ -101,7 +101,7 @@ public class TransformHelper {
         } catch (Exception e) {
         }
 
-        AppExtension android = project.getExtensions().getByType(AppExtension.class)
+        BaseExtension android = project.getExtensions().findByName("android")
         android?.getBootClasspath()?.each {
             try {
                 classPool.insertClassPath(it.absolutePath)
